@@ -1,0 +1,28 @@
+{
+  "env": {
+      "browser": true,
+      "commonjs": true,
+      "es2021": true,
+      "node": true
+  },
+  "extends": ["eslint:recommended", "standard"],
+  "parserOptions": {
+      "ecmaVersion": 12
+  },
+  "plugins": ["import", "node", "promise"],
+  "root": true,
+  "rules": {
+    "comma-dangle": ["error", {
+      "objects": "always",
+      "functions": "never",
+      "arrays": "never"
+      }
+    ],
+    "operator-linebreak": ["error", "before"],
+    "quotes": "off",
+    "semi": ["error", "always"],
+    "space-before-function-paren": ["error", "never"],
+    "space-in-parens": ["off"],
+    "promise/param-names": ["off"]
+  }
+}
