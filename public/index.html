@@ -1,13 +1,42 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <title>Genetic Alg and NN</title> 
+    <meta charaset="UTF-8">
+    <script src="https://scheduler.distributed.computer/dcp-client/dcp-client.js"></script>
     <script id="bravojs" src="./src/bravo.js"></script>
-
     <script src="./src/index.js"></script>
-    
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
+    <h1>
+      AI find the red square
+    </h1>
+    <form id="form">
+      <div style="display:inline-block; width: 100%;">
+        <div class="dcpOptions categorySpace">
+          <div class="headerSpace">
+            <input type="checkbox" id="useDCP" name="useDCP">
+            <label for="useDCP" id="useDCPlabel"> Generate Image using DCP?</label>
+          </div>
+          <h3>
+            DCP Specific Options
+          </h3>
+          <div class="keystore optionGroup">
+            <label for="keystoreAddress" id="keystoreLabel" class="bottomPaddingSmall">Load your DCP keystore:</label>
+            <br>
+            <input type="file" id="keystoreFile" name="uploadKeystore" disabled>
+          </div>
+          <div class="localExec optionGroup">
+            <input type="checkbox" id="localExec" name="localExec" disabled>
+            <label for="localExec">Use localExec in DCP?</label>
+          </div>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 40px;">
+        <input type="submit" id="submit">
+      </div>
+    </form>
     <canvas id="canvas" width="7500" height="750"></canvas>
   </body>
 </html>

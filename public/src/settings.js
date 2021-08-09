@@ -13,10 +13,10 @@ module.declare([], function(require, exports, modules) {
     height: 700,
     crossRate: 0.8,
     mutationRate: 0.08,
-    popSize: 200,
+    popSize: 100,
     learningRate: 0.08,
     gameTicks: 300,
-    generations: 100,
+    generations: 5,
     endLocation: [100, 100],
     eventLoopTimeout: 10,
   };

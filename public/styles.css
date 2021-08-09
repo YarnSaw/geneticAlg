@@ -1,0 +1,43 @@
+h1 {
+  text-align:center;
+  margin-bottom: 70px;
+}
+
+#canvas {
+  margin: auto;
+  display: block;
+}
+
+#submit {
+  margin-bottom: 20px;
+}
+
+#useDCP {
+  width: 20px;
+  height: 20px;
+}
+
+.bottomPaddingSmall {
+  padding-bottom:8px;
+}
+.bottomPaddingLarge {
+  padding-bottom:15px;
+}
+
+.headerSpace {
+  margin-bottom: 25px;
+}
+
+.categorySpace {
+  margin-bottom: 50px;
+}
+
+.optionGroup {
+  margin-bottom: 10px;
+}
+
+.dcpOptions {
+  width: 40%;
+  padding-left: 5%;
+  float: left;
+}
