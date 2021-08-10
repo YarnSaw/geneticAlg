@@ -29,7 +29,8 @@ module.declare([], function(require, exports, modules) {
     updateAIWeights(weights) {
       this.w1Intermediate = weights.slice(0, this.neuralNet.inputSize * this.neuralNet.hiddenSize);
       this.w1 = new Array(this.neuralNet.inputSize).fill().map((undef1, index) => Array.from({ length: this.neuralNet.hiddenSize, }, (undef2, index2) => this.w1Intermediate[index * this.neuralNet.hiddenSize + index2]));
-      this.w2 = new Array(this.neuralNet.hiddenSize).fill().map((undef1, index) => Array.from({ length: this.neuralNet.outputSize, }, (undef2, index2) => weights[index * this.neuralNet.outputSize + index2]));
+      this.w2Intermediate = weights.slice(this.neuralNet.inputSize * this.neuralNet.hiddenSize, weights.length);
+      this.w2 = new Array(this.neuralNet.hiddenSize).fill().map((undef1, index) => Array.from({ length: this.neuralNet.outputSize, }, (undef2, index2) => this.w2Intermediate[index * this.neuralNet.outputSize + index2]));
     }
 
     checkPressedKey(ev) {
