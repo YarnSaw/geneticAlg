@@ -23,6 +23,7 @@
     "semi": ["error", "always"],
     "space-before-function-paren": ["error", "never"],
     "space-in-parens": ["off"],
-    "promise/param-names": ["off"]
+    "promise/param-names": ["off"],
+    "no-var":["off"]
   }
 }
