@@ -11,8 +11,8 @@
 module.declare([], function(require, exports, modules) {
   class Player {
     constructor(gameWidth, gameHeight, controller, neuralNet, initialWeights) {
-      this.x = gameWidth / 2;
-      this.y = gameHeight - 20;
+      this.x = 0;
+      this.y = 0;
       this.gameWidth = gameWidth;
       this.gameHeight = gameHeight;
       this.controller = controller;
@@ -47,7 +47,7 @@ module.declare([], function(require, exports, modules) {
       }
     }
 
-    updatePosition(goalLocation) {
+    updatePosition(goalLocation, training) {
       if (this.controller === "human") {
         for (let i = 0; i < this.keysPressed.length; i++) {
           if (this.keysPressed[i]) {
@@ -85,17 +85,19 @@ module.declare([], function(require, exports, modules) {
           this.y -= 3;
         }
       }
-      if (this.x > this.gameWidth) {
-        this.x = this.gameWidth;
-      }
-      if (this.x < 0) {
-        this.x = 0;
-      }
-      if (this.y > this.gameHeight) {
-        this.y = this.gameHeight;
-      }
-      if (this.y < 0) {
-        this.y = 0;
+      if (!training) {
+        if (this.x > this.gameWidth) {
+          this.x = this.gameWidth;
+        }
+        if (this.x < 0) {
+          this.x = 0;
+        }
+        if (this.y > this.gameHeight) {
+          this.y = this.gameHeight;
+        }
+        if (this.y < 0) {
+          this.y = 0;
+        }
       }
     }
   }

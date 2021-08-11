@@ -16,17 +16,17 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
   /**
    * Runs one iteration of the game loop. Update all locations and redraw the screen.
    */
-  function eventLoop(playerList, inDCP, endLocation) {
+  function eventLoop(playerList, inDCP, endLocation, learning) {
     if (settings.eventLoopTimeout >= 0) {
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.fillStyle = 'red';
-      context.fillRect(endLocation[0] - 20, endLocation[1] - 20, 40, 40);
+      context.fillRect(endLocation[0] - 20 + (canvas.width / 2), endLocation[1] - 20 + (canvas.height / 2), 40, 40);
       context.fillStyle = 'black';
     }
     for (const ai of playerList) {
-      ai.updatePosition(endLocation);
+      ai.updatePosition(endLocation, learning);
       if (settings.eventLoopTimeout >= 0) {
-        context.fillRect(ai.x - 10, ai.y - 10, 20, 20);
+        context.fillRect(ai.x - 10 + (canvas.width / 2), ai.y - 10 + (canvas.height / 2), 20, 20);
       }
     }
   }
@@ -64,7 +64,8 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
       const p = new Player(settings.width, settings.height, 'ai', neuralNet, geneticAlg.population[i]);
       playerList.push(p);
     }
-    let endLocation = [Math.floor(Math.random() * settings.width), Math.floor(Math.random() * settings.height)];
+    let playerStartLoc;
+    let endLocation = [Math.floor(Math.random() * settings.width - (settings.width / 2)), Math.floor(Math.random() * settings.height - (settings.height / 2))];
     let generationsRun = 0;
     while (generationsRun < settings.generations) {
       if (inDCP) {
@@ -75,10 +76,10 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
       for (let alive = 0; alive < settings.gameTicks; alive++) {
         if (inDCP) {
           for (const ai of playerList) {
-            ai.updatePosition(endLocation);
+            ai.updatePosition(endLocation, learn);
           }
         } else {
-          eventLoop(playerList, inDCP, endLocation);
+          eventLoop(playerList, inDCP, endLocation, learn);
           if (settings.eventLoopTimeout >= 0) {
             await new Promise(r => setTimeout(r, settings.eventLoopTimeout));
           }
@@ -91,16 +92,28 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
           fitness.push(fitnessScore);
         }
         geneticAlg.evolve(fitness);
-        endLocation = [Math.floor(Math.random() * settings.width), Math.floor(Math.random() * settings.height)];
-        const playerStartLoc = [Math.floor(Math.random() * settings.width), Math.floor(Math.random() * settings.height)];
+        // Guarantee the starting location and ending location are fairly separate.
+        while (true) {
+          endLocation = [Math.floor(Math.random() * settings.width - (settings.width / 2)), Math.floor(Math.random() * settings.height - (settings.height / 2))];
+          playerStartLoc = [Math.floor(Math.random() * settings.width) - (settings.width / 2), Math.floor(Math.random() * settings.height - (settings.height / 2))];
+          if (Math.sqrt((endLocation[0] - playerStartLoc[0]) ** 2 + (endLocation[1] - playerStartLoc[1]) ** 2) > settings.width / 3) {
+            break;
+          }
+        }
         for (const i in playerList) {
           playerList[i].updateAIWeights(geneticAlg.population[i]);
           playerList[i].x = playerStartLoc[0];
           playerList[i].y = playerStartLoc[1];
         }
       } else {
-        endLocation = [Math.floor(Math.random() * settings.width), Math.floor(Math.random() * settings.height)];
-        const playerStartLoc = [Math.floor(Math.random() * settings.width), Math.floor(Math.random() * settings.height)];
+        // Guarantee the starting location and ending location are fairly separate.
+        while (true) {
+          endLocation = [Math.floor(Math.random() * settings.width - (settings.width / 2)), Math.floor(Math.random() * settings.height - (settings.height / 2))];
+          playerStartLoc = [Math.floor(Math.random() * settings.width) - (settings.width / 2), Math.floor(Math.random() * settings.height - (settings.height / 2))];
+          if (Math.sqrt((endLocation[0] - playerStartLoc[0]) ** 2 + (endLocation[1] - playerStartLoc[1]) ** 2) > settings.width / 3) {
+            break;
+          }
+        }
         for (const i in playerList) {
           playerList[i].x = playerStartLoc[0];
           playerList[i].y = playerStartLoc[1];
@@ -118,11 +131,11 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
       const compute = dcp.compute;
 
       const dcpSettings = JSON.parse(JSON.stringify(settings));
-      dcpSettings.popSize = Math.min(100, dcpSettings.popSize / 10); // Min between 100 people per gen, or 10% of the population
-      const numSlices = Math.floor(settings.popSize / dcpSettings.popSize);
-      settings.popSize -= settings.popSize % dcpSettings.popSize;
+      dcpSettings.popSize = settings.popPerSlice;
       dcpSettings.generations = dcpSettings.gensPerSlice;
+      settings.popSize = settings.popPerSlice * settings.numSlices;
 
+      const numSlices = settings.numSlices;
       const job = compute.for(
         1, numSlices, gameLoop, [dcpSettings, true, undefined, true]
       );
@@ -157,7 +170,8 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
       }
       results = Array.from(results);
       results = results.flat();
-      gameLoop(null, settings, false, results, true);
+      settings.generations = 20;
+      gameLoop(null, settings, null, results, true);
     } else {
       gameLoop(null, settings, null, null, true);
     }

@@ -61,9 +61,9 @@ module.declare([], function(require, exports, modules) {
       const selectedIndexes = {};
       for (let i = 0; i < this.popSize; i++) {
         const selectedIndex = randomChoice(fitnessList);
-        // Ensure no more than 5% of the new generation can be based on the same creature
+        // Ensure no more than 2% of the new generation can be based on the same creature
         if (selectedIndexes[selectedIndex]) {
-          if (selectedIndexes[selectedIndex] === Math.floor(this.popSize / 20)) {
+          if (selectedIndexes[selectedIndex] === Math.floor(this.popSize * 0.02)) {
             fitnessList[selectedIndex] = 0;
           }
           selectedIndexes[selectedIndex]++;

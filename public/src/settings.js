@@ -15,9 +15,11 @@ module.declare([], function(require, exports, modules) {
     mutationRate: 0.08,
     popSize: 1000,
     learningRate: 0.08,
-    gameTicks: 300,
-    generations: 50,
-    gensPerSlice: 100,
-    eventLoopTimeout: 10,
+    gameTicks: 350,
+    generations: 500,
+    gensPerSlice: 98,
+    popPerSlice: 100,
+    numSlices: 10, // Total population for DCP = popPerSlice * numSlices
+    eventLoopTimeout: 4,
   };
 });
