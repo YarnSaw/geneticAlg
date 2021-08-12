@@ -17,9 +17,9 @@ module.declare([], function(require, exports, modules) {
     learningRate: 0.08,
     gameTicks: 350,
     generations: 500,
-    gensPerSlice: 98,
-    popPerSlice: 100,
+    gensPerSlice: 100,
+    popPerSlice: 300,
     numSlices: 10, // Total population for DCP = popPerSlice * numSlices
-    eventLoopTimeout: 4,
+    eventLoopTimeout: 0,
   };
 });

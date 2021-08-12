@@ -16,18 +16,44 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
   /**
    * Runs one iteration of the game loop. Update all locations and redraw the screen.
    */
-  function eventLoop(playerList, inDCP, endLocation, learning) {
+  function eventLoop(playerList, wallList, inDCP, endLocation, learning, soloPlayer) {
     if (settings.eventLoopTimeout >= 0) {
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.fillStyle = 'red';
       context.fillRect(endLocation[0] - 20 + (canvas.width / 2), endLocation[1] - 20 + (canvas.height / 2), 40, 40);
+      context.beginPath();
+      for (const wall of wallList) {
+        context.moveTo(wall.startX + canvas.width / 2, wall.startY + (canvas.height / 2));
+        context.lineTo(wall.endX + canvas.width / 2, wall.endY + (canvas.height / 2));
+      }
+      context.strokeStyle = '#0000ff';
+      context.stroke();
       context.fillStyle = 'black';
     }
     for (const ai of playerList) {
-      ai.updatePosition(endLocation, learning);
+      ai.updatePosition(endLocation, wallList, learning);
+      for (const wall of wallList) {
+        // You hit a wall, you die
+        if (wall.intersect(ai.x, ai.y)) {
+          ai.alive = false;
+          ai.x = ai.gameWidth;
+          ai.y = ai.gameWidth;
+        }
+      }
       if (settings.eventLoopTimeout >= 0) {
         context.fillRect(ai.x - 10 + (canvas.width / 2), ai.y - 10 + (canvas.height / 2), 20, 20);
       }
+    }
+    if (soloPlayer) {
+      soloPlayer.updatePosition(null, wallList, learning);
+      for (const wall of wallList) {
+        // You hit a wall, player get's tped but doesn't die
+        if (wall.intersect(soloPlayer.x, soloPlayer.y)) {
+          soloPlayer.x = soloPlayer.gameWidth / 2;
+          soloPlayer.y = soloPlayer.gameWidth / 2;
+        }
+      }
+      context.fillRect(soloPlayer.x - 10 + (canvas.width / 2), soloPlayer.y - 10 + (canvas.height / 2), 20, 20);  
     }
   }
 
@@ -41,14 +67,15 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
    * @returns List of newly trained population after all generations
    */
   async function gameLoop(_undef, settings, inDCP, fillPop, learn) {
-    let GeneticAlgorithm, Player, NeuralNetwork;
+    let GeneticAlgorithm, Player, NeuralNetwork, Wall;
     if (inDCP) {
       Player = require('player.js').Player;
-
+      Wall = require('player.js').Wall;
       NeuralNetwork = require('neuralNet.js').NeuralNetwork;
       GeneticAlgorithm = require('geneticAlg.js').GeneticAlgorithm;
     } else {
       Player = require('./src/player').Player;
+      Wall = require('./src/player').Wall;
       NeuralNetwork = require('./src/neuralNet').NeuralNetwork;
       GeneticAlgorithm = require('./src/geneticAlg').GeneticAlgorithm;
     }
@@ -60,10 +87,13 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
       geneticAlg.population = fillPop;
     }
     const playerList = [];
+    let wallList = [];
     for (let i = 0; i < settings.popSize; i++) {
       const p = new Player(settings.width, settings.height, 'ai', neuralNet, geneticAlg.population[i]);
       playerList.push(p);
     }
+    //wallList.push(new Wall(-100, -100, -100, 100));
+
     let playerStartLoc;
     let endLocation = [Math.floor(Math.random() * settings.width - (settings.width / 2)), Math.floor(Math.random() * settings.height - (settings.height / 2))];
     let generationsRun = 0;
@@ -76,10 +106,10 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
       for (let alive = 0; alive < settings.gameTicks; alive++) {
         if (inDCP) {
           for (const ai of playerList) {
-            ai.updatePosition(endLocation, learn);
+            ai.updatePosition(endLocation, wallList, learn);
           }
         } else {
-          eventLoop(playerList, inDCP, endLocation, learn);
+          eventLoop(playerList, wallList, inDCP, endLocation, learn);
           if (settings.eventLoopTimeout >= 0) {
             await new Promise(r => setTimeout(r, settings.eventLoopTimeout));
           }
@@ -88,6 +118,7 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
       if (learn) {
         const fitness = [];
         for (const player of playerList) {
+          player.alive = true; // Revive dead people. Even dead people deserve to live.
           const fitnessScore = geneticAlg.findFitness(player.x, player.y, endLocation[0], endLocation[1]);
           fitness.push(fitnessScore);
         }
@@ -96,7 +127,7 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
         while (true) {
           endLocation = [Math.floor(Math.random() * settings.width - (settings.width / 2)), Math.floor(Math.random() * settings.height - (settings.height / 2))];
           playerStartLoc = [Math.floor(Math.random() * settings.width) - (settings.width / 2), Math.floor(Math.random() * settings.height - (settings.height / 2))];
-          if (Math.sqrt((endLocation[0] - playerStartLoc[0]) ** 2 + (endLocation[1] - playerStartLoc[1]) ** 2) > settings.width / 3) {
+          if (Math.sqrt((endLocation[0] - playerStartLoc[0]) ** 2 + (endLocation[1] - playerStartLoc[1]) ** 2) > settings.width / 2) {
             break;
           }
         }
@@ -110,7 +141,7 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
         while (true) {
           endLocation = [Math.floor(Math.random() * settings.width - (settings.width / 2)), Math.floor(Math.random() * settings.height - (settings.height / 2))];
           playerStartLoc = [Math.floor(Math.random() * settings.width) - (settings.width / 2), Math.floor(Math.random() * settings.height - (settings.height / 2))];
-          if (Math.sqrt((endLocation[0] - playerStartLoc[0]) ** 2 + (endLocation[1] - playerStartLoc[1]) ** 2) > settings.width / 3) {
+          if (Math.sqrt((endLocation[0] - playerStartLoc[0]) ** 2 + (endLocation[1] - playerStartLoc[1]) ** 2) > settings.width / 2) {
             break;
           }
         }

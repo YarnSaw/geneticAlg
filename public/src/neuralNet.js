@@ -34,12 +34,12 @@ module.declare([], function(require, exports, modules) {
    */
   class NN {
     constructor() {
-      // Input is x, y, goalX, goalY
-      this.inputSize = 4;
+      // Input is x, y, goalX, goalY, 8 directions of sight
+      this.inputSize = 12;
       // Output is movement in x and movement in y
       this.outputSize = 2;
       // Hidden layer size
-      this.hiddenSize = 8;
+      this.hiddenSize = 12;
     }
 
     /**
