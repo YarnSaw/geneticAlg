@@ -92,7 +92,7 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
       const p = new Player(settings.width, settings.height, 'ai', neuralNet, geneticAlg.population[i]);
       playerList.push(p);
     }
-    //wallList.push(new Wall(-100, -100, -100, 100));
+    wallList.push(new Wall(-100, -100, -100, 100));
 
     let playerStartLoc;
     let endLocation = [Math.floor(Math.random() * settings.width - (settings.width / 2)), Math.floor(Math.random() * settings.height - (settings.height / 2))];
@@ -101,6 +101,10 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
       if (inDCP) {
         // @ts-ignore
         progress(); // eslint-disable-line no-undef
+      }
+      if (!inDCP) {
+        const gen = document.getElementById('genCount');
+        gen.innerHTML = generationsRun.toString();
       }
       generationsRun++;
       for (let alive = 0; alive < settings.gameTicks; alive++) {
@@ -115,6 +119,30 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
           }
         }
       }
+      let nextEndLocation;
+      while (true) {
+        nextEndLocation = [Math.floor(Math.random() * settings.width - (settings.width / 2)), Math.floor(Math.random() * settings.height - (settings.height / 2))];
+        playerStartLoc = [Math.floor(Math.random() * settings.width) - (settings.width / 2), Math.floor(Math.random() * settings.height - (settings.height / 2))];
+        if (Math.sqrt((nextEndLocation[0] - playerStartLoc[0]) ** 2 + (nextEndLocation[1] - playerStartLoc[1]) ** 2) > settings.width / 2) {
+          break;
+        }
+      }
+      const smallX = Math.min(playerStartLoc[0], nextEndLocation[0]);
+      const smallY = Math.min(playerStartLoc[1], nextEndLocation[1]);
+      const largeX = Math.max(playerStartLoc[0], nextEndLocation[0]);
+      const largeY = Math.max(playerStartLoc[1], nextEndLocation[1]);
+      wallList = [];
+      while (true) {
+        const wallStartX = Math.floor(Math.random() * (largeX - smallX)) + smallX;
+        const wallStartY = Math.floor(Math.random() * (largeY - smallY)) + smallY;
+        const wallEndX = Math.floor(Math.random() * (largeX - smallX)) + smallX;
+        const wallEndY = Math.floor(Math.random() * (largeY - smallY)) + smallY;
+        const wallSize = Math.sqrt((wallStartX - wallEndX) ** 2 + (wallStartY - wallEndY) ** 2);
+        if (wallSize > 75) {
+          wallList.push(new Wall(wallStartX, wallStartY, wallEndX, wallEndY));
+          break;
+        }
+      }
       if (learn) {
         const fitness = [];
         for (const player of playerList) {
@@ -124,13 +152,7 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
         }
         geneticAlg.evolve(fitness);
         // Guarantee the starting location and ending location are fairly separate.
-        while (true) {
-          endLocation = [Math.floor(Math.random() * settings.width - (settings.width / 2)), Math.floor(Math.random() * settings.height - (settings.height / 2))];
-          playerStartLoc = [Math.floor(Math.random() * settings.width) - (settings.width / 2), Math.floor(Math.random() * settings.height - (settings.height / 2))];
-          if (Math.sqrt((endLocation[0] - playerStartLoc[0]) ** 2 + (endLocation[1] - playerStartLoc[1]) ** 2) > settings.width / 2) {
-            break;
-          }
-        }
+        endLocation = nextEndLocation;
         for (const i in playerList) {
           playerList[i].updateAIWeights(geneticAlg.population[i]);
           playerList[i].x = playerStartLoc[0];
@@ -138,13 +160,7 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
         }
       } else {
         // Guarantee the starting location and ending location are fairly separate.
-        while (true) {
-          endLocation = [Math.floor(Math.random() * settings.width - (settings.width / 2)), Math.floor(Math.random() * settings.height - (settings.height / 2))];
-          playerStartLoc = [Math.floor(Math.random() * settings.width) - (settings.width / 2), Math.floor(Math.random() * settings.height - (settings.height / 2))];
-          if (Math.sqrt((endLocation[0] - playerStartLoc[0]) ** 2 + (endLocation[1] - playerStartLoc[1]) ** 2) > settings.width / 2) {
-            break;
-          }
-        }
+        endLocation = nextEndLocation;
         for (const i in playerList) {
           playerList[i].x = playerStartLoc[0];
           playerList[i].y = playerStartLoc[1];
@@ -182,6 +198,8 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
 
       job.on('result', (ev) => {
         console.log("Got a result", ev.sliceNumber);
+        const slice = document.getElementById('slices');
+        slice.innerHTML = (parseFloat(slice.innerHTML) + 1).toString();
       });
 
       job.on(('error'), (ev) => {
@@ -201,7 +219,13 @@ module.declare(['./src/neuralNet', './src/geneticAlg', './src/player', './src/se
       }
       results = Array.from(results);
       results = results.flat();
-      settings.generations = 20;
+      settings.generations = 40;
+      // Make sure new pop isn't massively big
+      for (let i = 0; i < (results.length / 2); i++) {
+        const selected = Math.floor(Math.random() * results.length);
+        results.splice(selected, 1);
+      }
+      settings.popSize /= 2;
       gameLoop(null, settings, null, results, true);
     } else {
       gameLoop(null, settings, null, null, true);
